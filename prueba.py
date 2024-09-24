@@ -1,8 +1,21 @@
 from TCP import Mensaje_TCP
 
-def dividir_mensaje(mensaje,maximo):
-    return [mensaje[i:i + maximo] for i in range(0, len(mensaje), maximo)]
+def false_arr(n):
+    arr = []
+    for i in range(n):
+        arr += [False]
+    return arr
 
-mensaje = "Lorem ipsum dolor sit amet consectetur adipiscing elit netus justo, nisi venenatis lacus praesent ac mi ornare pellentesque, libero blandit etiam a aliquet placerat conubia cursus. Taciti eget orci varius fusce ultricies dui gravida neque himenaeos curae primis turpis, augue mauris duis per purus laoreet pellentesque ligula condimentum porta."
+def check_arr(array):
+    for j in range(len(array)):
+        if array[j] == False:
+            return False
+    return True
 
-print(dividir_mensaje(mensaje,5))
+a = false_arr(5)
+b = [True, True, True, False]
+c = [True, True, True]
+
+print(check_arr(a))
+print(check_arr(b))
+print(check_arr(c))
