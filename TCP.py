@@ -69,6 +69,7 @@ def enviar(sock, mensaje):
         sock.send(str(segmento).encode())
     #Dividimos el mensaje en submensajes de tamaño 10
     mensajes = dividir_mensaje(mensaje,10) 
+    print(mensajes)
     total = len(mensajes)
     #Creamos un for que crea un Mensaje_TCP y lo asocia a un elemento de la lista para luego enviarlo
     for i in range(total):
@@ -132,14 +133,17 @@ def recibir(sock):
             #Si nos llega, enviamos un ack para ese mensaje
             respuesta = Mensaje_TCP("",1,0,0, recibido.seq, recibido.total)
             sock.send(str(respuesta).encode())
+
         #Si no nos llega nada, entonces el cliente tambien recibió todos los ack
         except socket.timeout:
             break
+    
 
     #Una vez que ya recibimos todos los mensajes, armamos el mensaje final y lo retornamos
     mensaje_armado = ""
     for i in range(len(mensajes_tcp)):
         mensaje_armado += mensajes_tcp[i].mensaje
+        print(mensajes_tcp[i].mensaje)
     
     return mensaje_armado
 

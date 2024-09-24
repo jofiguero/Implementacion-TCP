@@ -11,13 +11,13 @@ def formar_input():
 
 # Creamos un socket y lo dejamos escuchando en cualquier direccion
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-udp_socket.bind(('', 12345))  
+udp_socket.bind(('', 12345))
 
 print("QUEDAMOS ESPERANDO ALGUN MENSAJE")
 data, addr = udp_socket.recvfrom(1024)
 recibido = parsear_tcp(data.decode())
 
-udp_socket.sendto(str(Mensaje_TCP("",1,1,0)).encode(), addr)
+udp_socket.sendto(str(Mensaje_TCP("",1,1,0,0,1)).encode(), addr)
 data, addr = udp_socket.recvfrom(1024)
 
 recibido = parsear_tcp(data.decode())
