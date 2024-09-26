@@ -38,6 +38,12 @@ def check_arr(array):
             return False
     return True
 
+def check_arr_between(array, desde, hasta):
+    for j in range(desde, hasta):
+        if array[j] == False:
+            return False
+    return True
+
 
 # Funcion para establecer conexion
 def conectar(direccion, puerto):
@@ -47,54 +53,72 @@ def conectar(direccion, puerto):
 
     # Enviamos un mensaje con syn activado
     print("Solicitando conexion")
-    sock.send(str(Mensaje_TCP("",0,1,0,0,1)).encode())
+    sock.settimeout(1.0)
+    intentos = 0
+    while True:
+        sock.send(str(Mensaje_TCP("",0,1,0,0,1)).encode())
+        try:
+            # Esperamos recibir un mensaje con syn y ack activados
+            data = sock.recv(1024)
+            mensaje_decodificado = parsear_tcp(data.decode())
+            if mensaje_decodificado.SYN == 1 and mensaje_decodificado.ACK == 1:
+                print("Recibimos respuesta, confirmamos de vuelta")
+                sock.send(str(Mensaje_TCP("",1,0,0,0,1)).encode())
+                print("Conexión establecida")
+                sock.settimeout(None)
+                return sock
+        #Si es que se acaba el tiempo
+        except socket.timeout:
+            intentos += 1
+            #Si ya llevamos mas de 30 intentos, 
+            if intentos > 30:
+                break
+            continue
 
-    # Esperamos recibir un mensaje con syn y ack activados
-    data = sock.recv(1024)
-    mensaje_decodificado = parsear_tcp(data.decode())
-
-    if mensaje_decodificado.SYN == 1 and mensaje_decodificado.ACK == 1:
-        print("Recibimos respuesta, confirmamos de vuelta")
-        sock.send(str(Mensaje_TCP("",1,0,0,0,1)).encode())
-        print("Conexión establecida")
-        return sock
-    else:
-        raise ConnectionError("No se pudo establecer la conexión.")
+    raise ConnectionError("No se pudo establecer la conexión.")
 
 
 # Funcion para enviar datos
 def enviar(sock, mensaje):
-    def reenviar(total,mensajes,sock):
-        segmento = Mensaje_TCP(mensajes[i],0,0,0,i,total)
-        sock.send(str(segmento).encode())
+
+    def reenviar(total,mensajes,sock,window_pos,window_size):
+        for i in range(window_pos, min(window_pos+window_size,total)):
+            segmento = Mensaje_TCP(mensajes[i],0,0,0,i,total)
+            sock.send(str(segmento).encode())
+
     #Dividimos el mensaje en submensajes de tamaño 10
     mensajes = dividir_mensaje(mensaje,10) 
-    print(mensajes)
     total = len(mensajes)
-    #Creamos un for que crea un Mensaje_TCP y lo asocia a un elemento de la lista para luego enviarlo
-    for i in range(total):
-        segmento = Mensaje_TCP(mensajes[i],0,0,0,i,total)
-        sock.send(str(segmento).encode())
-
+    window_size = 5
+    window_pos = 0
     #Creamos un array de falsos para saber cuales ack ya hemos recibido
     checklist = false_arr(total)
-
-    #Esperamos una respuesta
+    #Seteamos un timeout
     sock.settimeout(1.0)
-
+    
     while not check_arr(checklist):
-        try:
-            respuesta = parsear_tcp(sock.recv(1024).decode())
-            #Si el mensaje es un ACK
-            if respuesta.ACK == 1:
-                #Lo marcamos como recibido
-                checklist[respuesta.seq] = True
-        #Si se acaba el timeout:
-        except socket.timeout:
-            reenviar(total,mensajes,sock)
-        
+        #Creamos un for que crea un Mensaje_TCP y lo asocia a un elemento de la lista para luego enviarlo
+        for i in range(window_pos, min(window_pos+window_size,total)):
+            segmento = Mensaje_TCP(mensajes[i],0,0,0,i,total)
+            sock.send(str(segmento).encode())
 
 
+        #Esperamos una respuesta
+        while not check_arr_between(checklist,window_pos, min(window_pos + window_size, total)):
+            try:
+                respuesta = parsear_tcp(sock.recv(1024).decode())
+                #Si el mensaje es un ACK
+                if respuesta.ACK == 1:
+                    #Lo marcamos como recibido
+                    checklist[respuesta.seq] = True
+            #Si se acaba el timeout:
+            except socket.timeout:
+                reenviar(total,mensajes,sock,window_pos,window_size)
+
+        #Movemos la ventana
+        window_pos += window_size
+    print("Termine")
+    sock.settimeout(None)
     print("Mensaje enviado correctamente.")
 
 
@@ -117,6 +141,7 @@ def recibir(sock):
     
 
     #Entramos en un bucle de recibir mensajes y enviar ack's 
+    sock.settimeout(3.0)
     while(not check_arr(checklist)):
         recibido = parsear_tcp(sock.recv(1024).decode())
         checklist[recibido.seq] = True
@@ -128,7 +153,6 @@ def recibir(sock):
     while True:
         try:
             #Vemos si nos llega un mensaje en tres segundos
-            sock.settimeout(3.0)
             recibido = parsear_tcp(sock.recv(1024).decode())
             #Si nos llega, enviamos un ack para ese mensaje
             respuesta = Mensaje_TCP("",1,0,0, recibido.seq, recibido.total)
@@ -138,12 +162,13 @@ def recibir(sock):
         except socket.timeout:
             break
     
+    sock.settimeout(None)
+    
 
     #Una vez que ya recibimos todos los mensajes, armamos el mensaje final y lo retornamos
     mensaje_armado = ""
     for i in range(len(mensajes_tcp)):
         mensaje_armado += mensajes_tcp[i].mensaje
-        print(mensajes_tcp[i].mensaje)
     
     return mensaje_armado
 
@@ -153,16 +178,26 @@ def recibir(sock):
 
 # Funcion para cerrar la conexion
 def terminar(sock):
-    # Enviamos un mensaje con fin activado
-    print("Solicitando conexion")
-    sock.send(str(Mensaje_TCP("",0,0,1)).encode())
-
+    print("Solicitando fin de conexion")
     # Esperamos recibir un mensaje con fin y ack activados
-    data = sock.recv(1024)
-    mensaje_decodificado = parsear_tcp(data.decode())
+    sock.settimeout(1.0)
+    intentos = 0
+    while True:
+        # Enviamos un mensaje con fin activado
+        sock.send(str(Mensaje_TCP("",0,0,1)).encode())
+        try: 
+            data = sock.recv(1024)
+            mensaje_decodificado = parsear_tcp(data.decode())
 
-    if mensaje_decodificado.FIN == 1 and mensaje_decodificado.ACK == 1:
-        print("Recibimos respuesta, confirmamos de vuelta")
-        sock.send(str(Mensaje_TCP("",1,0,0)).encode())
-        print("Conexión finalizada")
-        sock.close()
+            if mensaje_decodificado.FIN == 1 and mensaje_decodificado.ACK == 1:
+                print("Recibimos respuesta, confirmamos de vuelta")
+                sock.send(str(Mensaje_TCP("",1,0,0)).encode())
+                print("Conexión finalizada")
+                sock.close()
+        except socket.timeout:
+            intentos += 1
+            if intentos > 5:
+                break
+
+    #Si realizamos mas de 5 intentos infructuosos, cerramos conexion pues ya hemos dado aviso igualmente
+    sock.close()

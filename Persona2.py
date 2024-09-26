@@ -8,6 +8,16 @@ def formar_input():
     fin = input("Introduzca el fin ")
     return Mensaje_TCP(mensaje, int(ack), int(syn), int(fin))
 
+def generar_mensaje_enorme(min_size):
+    mensaje = ""
+    while len(mensaje) < min_size:
+        mensaje += "aaaaa"
+        mensaje += "bbbbb"
+        mensaje += "ccccc"
+        mensaje += "ddddd"
+        mensaje += "eeeee"
+        mensaje += "fffff"
+    return mensaje
 
 # Creamos un socket y lo dejamos escuchando en cualquier direccion
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,7 +37,12 @@ print("Conexion establecida")
 udp_socket.connect(addr)
 
 mensaje = recibir(udp_socket)
-print(mensaje)
+
+if mensaje == generar_mensaje_enorme(1000):
+    print(mensaje)
+    print("El mensaje fue recibido con exito")
+else:
+    print("El mensaje no llegó correctamente")
 
 
 
