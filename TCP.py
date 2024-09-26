@@ -81,7 +81,7 @@ def conectar(direccion, puerto):
 # Funcion para enviar datos
 def enviar(sock, mensaje):
 
-    def reenviar(total,mensajes,sock,window_pos,window_size):
+    def enviar_ventana(total,mensajes,sock,window_pos,window_size):
         for i in range(window_pos, min(window_pos+window_size,total)):
             segmento = Mensaje_TCP(mensajes[i],0,0,0,i,total)
             sock.send(str(segmento).encode())
@@ -89,7 +89,7 @@ def enviar(sock, mensaje):
     #Dividimos el mensaje en submensajes de tamaño 10
     mensajes = dividir_mensaje(mensaje,10) 
     total = len(mensajes)
-    window_size = 5
+    window_size = 1
     window_pos = 0
     #Creamos un array de falsos para saber cuales ack ya hemos recibido
     checklist = false_arr(total)
@@ -98,9 +98,7 @@ def enviar(sock, mensaje):
     
     while not check_arr(checklist):
         #Creamos un for que crea un Mensaje_TCP y lo asocia a un elemento de la lista para luego enviarlo
-        for i in range(window_pos, min(window_pos+window_size,total)):
-            segmento = Mensaje_TCP(mensajes[i],0,0,0,i,total)
-            sock.send(str(segmento).encode())
+        enviar_ventana(total, mensajes, sock, window_pos, window_size)
 
 
         #Esperamos una respuesta
@@ -111,9 +109,14 @@ def enviar(sock, mensaje):
                 if respuesta.ACK == 1:
                     #Lo marcamos como recibido
                     checklist[respuesta.seq] = True
+                    window_size += 3
             #Si se acaba el timeout:
             except socket.timeout:
-                reenviar(total,mensajes,sock,window_pos,window_size)
+                if window_size > 2:
+                    window_size = int(window_size / 2)
+                else:
+                    window_size = 1
+                enviar_ventana(total,mensajes,sock,window_pos,window_size)
 
         #Movemos la ventana
         window_pos += window_size
