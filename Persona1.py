@@ -1,5 +1,5 @@
 import socket
-from TCP import  Mensaje_TCP, conectar, enviar
+from redest2.t2 import  Mensaje_TCP, conectar, enviar
 
 def formar_input():
     mensaje = input("Introduzca el mensaje" )

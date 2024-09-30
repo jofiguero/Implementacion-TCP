@@ -1,4 +1,4 @@
-from TCP import Mensaje_TCP
+from redest2.t2 import Mensaje_TCP
 def generar_mensaje_enorme(min_size):
     mensaje = ""
     while len(mensaje) < min_size:

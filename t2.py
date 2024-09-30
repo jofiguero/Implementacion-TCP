@@ -1,6 +1,17 @@
 import socket
 import time
 
+"""
+Mensaje_TCP: Clase que representa un mensaje TCP y contiene no solo el cuerpo sino tambien todos los atributos
+del encabezado que fueron considerados pertinentes para el desarrollo de esta tarea.
+
+mensaje: Es el mensaje propiamente tal
+ACK: Es la flag ACK, indica si el mensaje es una confirmacion o no
+SYN: Es la flag SYN, indica si el mensaje es una solicitud de sincronizacion
+FIN: Es la flag FIN, indica si el mensaje es una solicitud de cierre de conexion
+seq: Es el identificador de este mensaje dentro de una ventana mas grande
+total: Es el total de mensajes que serán enviados en esta ventana
+"""
 class Mensaje_TCP:
     def __init__(self, mensaje, ACK, SYN, FIN, seq, total):
         self.mensaje = mensaje
@@ -13,31 +24,62 @@ class Mensaje_TCP:
     def __str__(self):
         return f"{self.mensaje}|{self.ACK}|{self.SYN}|{self.FIN}|{self.seq}|{self.total}"
 
+"""
+parsear_tcp: string -> Mensaje_TCP
+
+Recibe un string en formato "mensaje|ACK|SYN|FIN|seq|total", lo procesa y transforma en un Mensaje_TCP
+"""
 def parsear_tcp(string):
     string_spliteado = string.split("|")
     return Mensaje_TCP(string_spliteado[0],int(string_spliteado[1]),int(string_spliteado[2]),int(string_spliteado[3]),int(string_spliteado[4]),int(string_spliteado[5]))
 
+"""
+dividir_mensaje: string, int -> array[string]
+
+Recibe un mensaje y un largo maximo de segmento, y divide el mensaje en tantos strings como haga falta de modo que
+ninguno de ellos sea mas grande que dicho maximo
+"""
 def dividir_mensaje(mensaje,maximo):
     return [mensaje[i:i + maximo] for i in range(0, len(mensaje), maximo)]
 
+"""
+false_arr: int -> array[bool]
+
+Devuelve un array de False de tamaño n
+"""
 def false_arr(n):
     arr = []
     for i in range(n):
         arr += [False]
     return arr
 
+"""
+none_arr: int -> array[None]
+
+Devuelve un array de None de tamaño n
+"""
 def none_arr(n):
     arr = []
     for i in range(n):
         arr += [None]
     return arr
 
+"""
+check_array: array[bool] -> bool
+
+Revisa si todos los elementos del array están en True
+"""
 def check_arr(array):
     for j in range(len(array)):
         if array[j] == False:
             return False
     return True
 
+"""
+check_array: array[bool], int, int -> bool
+
+Revisa si todos los elementos del array entre los parametros indicados están en True
+"""
 def check_arr_between(array, desde, hasta):
     for j in range(desde, hasta):
         if array[j] == False:
@@ -45,7 +87,13 @@ def check_arr_between(array, desde, hasta):
     return True
 
 
-# Funcion para establecer conexion
+"""
+conectar: string, int -> socket
+
+Recibe una direccion y un puerto y crea un socket que conecta a dicha posicion, para esto realiza
+el three way handshake estando configurado con un timeout de 1 segundo y por a lo más 30 intentos. 
+Luego retorna el socket ya conectado.
+"""
 def conectar(direccion, puerto):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     #Fijamos un puerto y una direccion especificas para el socket
@@ -78,7 +126,14 @@ def conectar(direccion, puerto):
     raise ConnectionError("No se pudo establecer la conexión.")
 
 
-# Funcion para enviar datos
+"""
+enviar: socket, string -> void
+
+Recibe un socket ya conectado a algún lugar, y un mensaje, el cual divide en diversos submensajes de tamaño
+100 caracteres y los envía en ventanas de un tamaño que va variando conforme se va testeando la red, una vez
+enviada la ventana espera los ack de los mensajes y luego prosigue con la siguiente. 
+En caso de no recibir todos los ack dentro de su timeout de 1 segundo, los vuelve a enviar todos.
+"""
 def enviar(sock, mensaje):
 
     def enviar_ventana(total,mensajes,sock,window_pos,window_size):
@@ -87,7 +142,7 @@ def enviar(sock, mensaje):
             sock.send(str(segmento).encode())
 
     #Dividimos el mensaje en submensajes de tamaño 10
-    mensajes = dividir_mensaje(mensaje,10) 
+    mensajes = dividir_mensaje(mensaje,100) 
     total = len(mensajes)
     window_size = 1
     window_pos = 0
@@ -125,7 +180,15 @@ def enviar(sock, mensaje):
     print("Mensaje enviado correctamente.")
 
 
-# Funcion para recibir datos
+"""
+recibir: socket -> void
+
+Recibe un socket que ya está conectado a un lugar específico. Escucha para recibir el primer mensaje de todos.
+Con este mensaje puede conocer cual es la cantidad total de mensajes que van a venir, con lo cual crea una 
+checklist que se va llenando conforme van llegando los mensajes. Una vez se ha enviado el ack del ultimo mensaje
+que se estaba esperando, se realiza una ultima espera de 3 seg para comprobar que efectivamente la otra persona haya 
+recibido todos los ack, se arma el mensaje final y se retorna.
+"""
 def recibir(sock):
     #Recibimos algún mensaje
     primera_recepcion = parsear_tcp(sock.recv(1024).decode())
@@ -166,7 +229,6 @@ def recibir(sock):
             break
     
     sock.settimeout(None)
-    
 
     #Una vez que ya recibimos todos los mensajes, armamos el mensaje final y lo retornamos
     mensaje_armado = ""
@@ -179,7 +241,13 @@ def recibir(sock):
 
 
 
-# Funcion para cerrar la conexion
+"""
+terminar: socket -> void
+
+Recibe un socket concetado a una direccion y finaliza la conexion con la otra entidad, para esto realiza
+el four way handshake estando configurado con un timeout de 1 segundo y por a lo más 5 intentos (menos que en 
+conectar dado que aqui simplemente estamos avisando, no nos importa tanto que el otro sepa, es su responsabilidad). 
+"""
 def terminar(sock):
     print("Solicitando fin de conexion")
     # Esperamos recibir un mensaje con fin y ack activados

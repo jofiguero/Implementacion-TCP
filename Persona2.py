@@ -1,5 +1,5 @@
 import socket
-from TCP import  parsear_tcp, Mensaje_TCP, recibir
+from redest2.t2 import  parsear_tcp, Mensaje_TCP, recibir
 
 def formar_input():
     mensaje = input("Introduzca el mensaje" )
