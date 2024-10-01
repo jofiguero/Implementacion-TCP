@@ -16,3 +16,42 @@
 - En la función recibir, luego de haber recibido efectivamente todos los mensajes esperados, se esperan 3 segundos extras por si se recibe nuevamente un mensaje por parte del emisor (lo que significaría que no recibió el ack) y se reenvian los ack necesarios. Esto provoca que un envio de mensajes se demora un minimo de 3 segundos aun si el mensaje es pequeño.
 
 ## Como ejecutar la tarea
+
+El enunciado de la tarea hacia mención a que será importada para ser probada, en cuyo caso lo unico que se debe hacer es importar las funciones __conectar__, __enviar__, __recibir__ y __finalizar__ en el comienzo del archivo y usarlas dentro del script.
+
+Sin embargo, en caso de que les sirva, me tomé la libertad de hacer dos scripts que facilitan la ejecución y el testing de la tarea para hacerlo mas dinamico y entendible. Para ocuparlos se deben seguir los siguientes pasos:
+
+1) Primero, se deben descargar los archivos de la tarea, en particular los archivos __t2.py__, __Persona1.py__ y __Persona2.py__, todos estos deben quedar en el mismo directorio.
+
+2) Luego, se abren dos terminales y se navega hacia el directorio creado para almacenar los archivos usando el comando cd de la forma:
+**´´cd ruta/hacia/directorio**
+
+3) Posteriormente se debe ejecutar el programa Persona2.py en una de las dos terminales, que es quien hace de servidor, para posteriormente ejecutar el programa Persona1.py en la otra terminal, que es quien hace de cliente.
+
+Esto se realiza con los siguientes comandos: 
+
+- python Persona2.py
+- python Persona1.py
+
+4) La terminal cliente, consultará si es que se desea enviar un mensaje propio o generar uno predeterminado con un largo especifico, usted podrá escoger entre estas dos opciones:
+
+- La primera alternativa es enviar un mensaje propio, que se deberá escribir o copiar en la consola cliente
+
+- La segunda alternativa es enviar un mensaje generado cuyo largo es definido por usted
+
+Cabe aclarar que la ventana de envío escogida en la tarea es pequeña, razón por la cual un archivo muy grande podría tardar en enviarse, pero eventualmente debería llegar.
+
+5) Si se desea aplicar una simulacion de perdida de paquetes para estudiar si la tarea cumple con ser segura para enviar mensajes, se pueden usar los siguientes comandos en la terminal: 
+
+Para setear una perdida del x% de los paquetes:
+sudo tc qdisc add dev lo root netem loss 20%
+
+Para consultar la perdida actual:
+tc qdisc show dev lo
+
+Para finalizar la simulacion de perdida:
+sudo tc qdisc del dev lo root netem
+
+Este ultimo comando es importante para regresar el computador a la normalidad luego del testing.
+
+Muchas gracias por su tiempo.

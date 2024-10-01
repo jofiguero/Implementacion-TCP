@@ -1,5 +1,5 @@
 import socket
-from redest2.t2 import  Mensaje_TCP, conectar, enviar
+from t2 import  Mensaje_TCP, conectar, enviar
 
 def formar_input():
     mensaje = input("Introduzca el mensaje" )
@@ -23,6 +23,23 @@ def generar_mensaje_enorme(min_size):
 
 
 sock = conectar('127.0.0.1',12345)
-mensaje_corto = "Hola como estás juan carlos, yo por mi parte estoy tranquilo, me comentas!"
-mensaje_largo = "Te acuerdas que tenia que entregar una tarea de redes hace un tiempo? bueno, paso que la tenia casi lista el dia de la entrega, pero movieron el plazo hacia el dia siguiente y pensé que sería hasta el final del día. Lamentablemente al llegar a la universidad me enteré por mi amigo sebastian que el plazo habia sido movido unicamente hasta las 9 de la mañana del dia, y ya eran las 10. hable con el profesor para ver si se podia llegar a algun tipo de acuerdo sin embargo fue inutil, tuve un 1 en esa tarea."
-enviar(sock, generar_mensaje_enorme(1000))
+
+desicion = input("¿Quieres enviar un mensaje propio (1) o un mensaje muy largo autogenerado (2)? ")
+while True:
+    if desicion == "1":
+        mensaje = input("Ingresa tu mensaje: ")
+        break
+
+    elif desicion == "2":
+        mensaje = generar_mensaje_enorme(int(input("Ingresa el largo que quieres que tenga el mensaje: ")))
+        break
+
+    else: 
+        print("Input no valido")
+
+if len(mensaje) > 1000:
+    print("El mensaje ingresado es bastante largo, esto podria tardar mas de un minuto...")
+
+enviar(sock, mensaje)
+
+print("En tres segundos el mensaje enviado debería aparecer en la otra consola")

@@ -1,5 +1,5 @@
 import socket
-from redest2.t2 import  parsear_tcp, Mensaje_TCP, recibir
+from t2 import  parsear_tcp, Mensaje_TCP, recibir
 
 def formar_input():
     mensaje = input("Introduzca el mensaje" )
@@ -38,12 +38,8 @@ udp_socket.connect(addr)
 
 mensaje = recibir(udp_socket)
 
-if mensaje == generar_mensaje_enorme(1000):
-    print(mensaje)
-    print("El mensaje fue recibido con exito")
-else:
-    print("El mensaje no llegó correctamente")
+print("Mensaje recibido:")
 
-
+print(mensaje)
 
 
