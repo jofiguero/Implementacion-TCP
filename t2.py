@@ -110,6 +110,7 @@ def conectar(direccion, puerto):
             data = sock.recv(1024)
             mensaje_decodificado = parsear_tcp(data.decode())
             if mensaje_decodificado.SYN == 1 and mensaje_decodificado.ACK == 1:
+                print("d")
                 print("Recibimos respuesta, confirmamos de vuelta")
                 sock.send(str(Mensaje_TCP("",1,0,0,0,1)).encode())
                 print("Conexión establecida")
@@ -149,9 +150,11 @@ def enviar(sock, mensaje):
     #Creamos un array de falsos para saber cuales ack ya hemos recibido
     checklist = false_arr(total)
     #Seteamos un timeout
-    sock.settimeout(1.0)
+    sock.settimeout(0.5)
     
     while not check_arr(checklist):
+        print(checklist)
+        print(window_size)
         #Creamos un for que crea un Mensaje_TCP y lo asocia a un elemento de la lista para luego enviarlo
         enviar_ventana(total, mensajes, sock, window_pos, window_size)
 
@@ -159,14 +162,17 @@ def enviar(sock, mensaje):
         #Esperamos una respuesta
         while not check_arr_between(checklist,window_pos, min(window_pos + window_size, total)):
             try:
+                print("Voy a esperar")
                 respuesta = parsear_tcp(sock.recv(1024).decode())
+                print(f"Me llego: {str(respuesta)}")
                 #Si el mensaje es un ACK
-                if respuesta.ACK == 1:
+                if respuesta.ACK == 1 and not respuesta.mensaje == "conection_ack":
                     #Lo marcamos como recibido
                     checklist[respuesta.seq] = True
                     window_size += 3
             #Si se acaba el timeout:
             except socket.timeout:
+                print("No me llego nada")
                 if window_size > 2:
                     window_size = int(window_size / 2)
                 else:
@@ -176,6 +182,7 @@ def enviar(sock, mensaje):
         #Movemos la ventana
         window_pos += window_size
     print("Termine")
+    print(checklist)
     sock.settimeout(None)
     print("Mensaje enviado correctamente.")
 
@@ -190,8 +197,10 @@ que se estaba esperando, se realiza una ultima espera de 3 seg para comprobar qu
 recibido todos los ack, se arma el mensaje final y se retorna.
 """
 def recibir(sock):
+    print("a")
     #Recibimos algún mensaje
     primera_recepcion = parsear_tcp(sock.recv(1024).decode())
+    print("aaa")
 
     #Creamos una Checklist para llevar registro de cuales mensajes ya recibimos usando el dato "total"
     checklist = false_arr(primera_recepcion.total)
@@ -204,10 +213,11 @@ def recibir(sock):
     #Le respondemos
     respuesta = Mensaje_TCP("",1,0,0, primera_recepcion.seq, primera_recepcion.total)
     sock.send(str(respuesta).encode())
+    print("aaaaaa")
     
 
     #Entramos en un bucle de recibir mensajes y enviar ack's 
-    sock.settimeout(3.0)
+    print("b")
     while(not check_arr(checklist)):
         recibido = parsear_tcp(sock.recv(1024).decode())
         checklist[recibido.seq] = True
@@ -216,6 +226,8 @@ def recibir(sock):
         sock.send(str(respuesta).encode())
     
     #Verificamos que la otra persona haya recibido todos nuestros ack's
+    print("c")
+    sock.settimeout(3.0)
     while True:
         try:
             #Vemos si nos llega un mensaje en tres segundos
@@ -229,6 +241,7 @@ def recibir(sock):
             break
     
     sock.settimeout(None)
+    print("d")
 
     #Una vez que ya recibimos todos los mensajes, armamos el mensaje final y lo retornamos
     mensaje_armado = ""

@@ -24,8 +24,11 @@ def generar_mensaje_enorme(min_size):
 
 sock = conectar('127.0.0.1',12345)
 
-desicion = input("¿Quieres enviar un mensaje propio (1) o un mensaje muy largo autogenerado (2)? ")
+
 while True:
+    
+    desicion = input("¿Quieres enviar un mensaje propio (1) o un mensaje muy largo autogenerado (2)? ")
+
     if desicion == "1":
         mensaje = input("Ingresa tu mensaje: ")
         break

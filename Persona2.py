@@ -26,11 +26,21 @@ udp_socket.bind(('', 12345))
 print("QUEDAMOS ESPERANDO ALGUN MENSAJE")
 data, addr = udp_socket.recvfrom(1024)
 recibido = parsear_tcp(data.decode())
-
-udp_socket.sendto(str(Mensaje_TCP("",1,1,0,0,1)).encode(), addr)
-data, addr = udp_socket.recvfrom(1024)
-
-recibido = parsear_tcp(data.decode())
+intentos = 0
+while True:
+    print("a")
+    udp_socket.sendto(str(Mensaje_TCP("conection_ack",1,1,0,0,1)).encode(), addr)
+    udp_socket.settimeout(1.0)
+    try:
+        data, addr = udp_socket.recvfrom(1024)
+    except socket.timeout:
+        if intentos == 2:
+            break
+        intentos += 1
+    mensaje_decodificado = parsear_tcp(data.decode())
+    if mensaje_decodificado.SYN == 1 and mensaje_decodificado.ACK == 1:
+        break
+udp_socket.settimeout(None)
 print("Conexion establecida")
 
 #Conectamos manualmente udp_socket:

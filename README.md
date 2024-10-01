@@ -15,6 +15,8 @@
 
 - En la función recibir, luego de haber recibido efectivamente todos los mensajes esperados, se esperan 3 segundos extras por si se recibe nuevamente un mensaje por parte del emisor (lo que significaría que no recibió el ack) y se reenvian los ack necesarios. Esto provoca que un envio de mensajes se demora un minimo de 3 segundos aun si el mensaje es pequeño.
 
+- Dados los tests realizados, se optó por implementar un fairness que suma 3 segmentos al tamaño de la ventana por cada recibimiento exitoso y lo divide por dos por cada timeout ocurrido. Esto fue testeado con un loss de hasta un 40% de los paquetes y resultó ser relativamente rapido (considerando el tamaño de la ventana, si resulta que el archivo con el que se quiere probar es muy grande (> 1 MB), mejor será modificar este valor en la invocación de la funcion dividir mensaje).
+
 ## Como ejecutar la tarea
 
 El enunciado de la tarea hacia mención a que será importada para ser probada, en cuyo caso lo unico que se debe hacer es importar las funciones __conectar__, __enviar__, __recibir__ y __finalizar__ en el comienzo del archivo y usarlas dentro del script.
